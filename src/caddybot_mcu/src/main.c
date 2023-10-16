@@ -43,7 +43,9 @@ void get_mode_service_callback(const void* req, void* res)
 	caddybot_msgs__srv__GetMode_Response* response = (caddybot_msgs__srv__GetMode_Response*)res;
 
 	printf("MCU get_mode(%s)\n", current_mode);
+	
 	strcpy(response->mode.data.data, current_mode);
+	response->mode.data.size = strlen(current_mode);
 }
 
 int main()
