@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#define STRING_BUFFER_LEN 100
+#define STRING_BUFFER_LEN 32
 
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Aborting.\n",__LINE__,(int)temp_rc); return 1;}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Continuing.\n",__LINE__,(int)temp_rc);}}
@@ -22,7 +22,7 @@ rcl_subscription_t velocity_subscriber;
 rcl_subscription_t led_subscriber;
 rcl_service_t get_mode_service;
 
-char current_mode[32];
+char current_mode[STRING_BUFFER_LEN];
 
 void velocity_subscription_callback(const void * msgin)
 {
@@ -71,9 +71,17 @@ int main()
 	RCCHECK(rclc_service_init_default(&get_mode_service, &node, ROSIDL_GET_SRV_TYPE_SUPPORT(caddybot_msgs, srv, GetMode), "/get_mode"));
 
 	caddybot_msgs__msg__Velocity* velocity_msg = caddybot_msgs__msg__Velocity__create();
+
 	std_msgs__msg__String* led_msg = std_msgs__msg__String__create();
+	char led_msg_buffer[STRING_BUFFER_LEN];
+	led_msg->data.data = led_msg_buffer;
+	led_msg->data.capacity = STRING_BUFFER_LEN;
+
 	caddybot_msgs__srv__GetMode_Request* get_mode_req_msg = caddybot_msgs__srv__GetMode_Request__create();
 	caddybot_msgs__srv__GetMode_Response* get_mode_res_msg = caddybot_msgs__srv__GetMode_Response__create();
+	char get_mode_res_msg_buffer[STRING_BUFFER_LEN];
+	get_mode_res_msg->mode.data.data = get_mode_res_msg_buffer;
+	get_mode_res_msg->mode.data.capacity = STRING_BUFFER_LEN;
 
 	strcpy(current_mode, "Undefined");
 
@@ -94,5 +102,6 @@ int main()
 	RCCHECK(rcl_publisher_fini(&mode_publisher, &node));
 	RCCHECK(rcl_subscription_fini(&velocity_subscriber, &node));
 	RCCHECK(rcl_subscription_fini(&led_subscriber, &node));
+	RCCHECK(rcl_service_fini(&get_mode_service, &node));
 	RCCHECK(rcl_node_fini(&node));
 }
