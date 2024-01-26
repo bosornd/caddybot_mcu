@@ -4,6 +4,8 @@
 #include <rclc/executor.h>
 
 #include <std_msgs/msg/string.h>
+#include <sensor_msgs/msg/imu.h>
+#include <nav_msgs/msg/odometry.h>
 #include <caddybot_msgs/msg/velocity.h>
 #include <caddybot_msgs/srv/get_mode.h>
 
@@ -17,6 +19,8 @@
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Continuing.\n",__LINE__,(int)temp_rc);}}
 
 rcl_publisher_t mode_publisher;
+rcl_publisher_t imu_publisher;
+rcl_publisher_t odometry_publisher;
 
 rcl_subscription_t velocity_subscriber;
 rcl_subscription_t led_subscriber;
@@ -63,6 +67,12 @@ int main()
 	// Create a reliable mode publisher
 	RCCHECK(rclc_publisher_init_default(&mode_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "/mode"));
 
+	// Create a reliable IMU publisher
+	RCCHECK(rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/imu"));
+
+	// Create a reliable Odometry publisher
+	RCCHECK(rclc_publisher_init_default(&odometry_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(nav_msgs, msg, Odometry), "/odometry"));
+
 	// Create a best effort velocity subscriber
 	RCCHECK(rclc_subscription_init_best_effort(&velocity_subscriber, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(caddybot_msgs, msg, Velocity), "/velocity"));
 
@@ -102,6 +112,8 @@ int main()
 	caddybot_msgs__srv__GetMode_Response__destroy(get_mode_res_msg);
 	
 	RCCHECK(rcl_publisher_fini(&mode_publisher, &node));
+	RCCHECK(rcl_publisher_fini(&imu_publisher, &node));
+	RCCHECK(rcl_publisher_fini(&odometry_publisher, &node));
 	RCCHECK(rcl_subscription_fini(&velocity_subscriber, &node));
 	RCCHECK(rcl_subscription_fini(&led_subscriber, &node));
 	RCCHECK(rcl_service_fini(&get_mode_service, &node));

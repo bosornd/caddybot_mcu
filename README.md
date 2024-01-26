@@ -74,17 +74,18 @@ publishing a Velocity topic confirms that it is delivered to MCU through micro_r
 $ ros2 topic pub --once /velocity caddybot_msgs/msg/Velocity '{speed: 0.8, angle: 0.0}'
 ```
 
-## architecture
-![architecture by rqt_graph](/img/architecture.png)
-
-## test micro-ros-agent
-1. in terminal 1,
+## launch MCU
+1. in terminal 1(main board),
 ```
 $ ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
 ```
 ![micro_ros_agent starting](/img/micro_ros_agent1.png)
 
-2. in terminal 2,
+2. in terminal 2(MCU),
+```
+$ ros2 launch caddybot_mcu mcu.py
+```
+or,
 ```
 $ export RMW_IMPLEMENTATION=rmw_microxrcedds
 $ ros2 run caddybot_mcu mcu
@@ -92,7 +93,7 @@ $ ros2 run caddybot_mcu mcu
 ![MCU starting](/img/micro_ros_agent2.png)
 ![micro_ros_agent connected](/img/micro_ros_agent3.png)
 
-3. in terminal 3,
+3. in terminal 3(main board),
 ```
 $ ros2 topic pub --once /velocity caddybot_msgs/msg/Velocity '{speed: 0.8, angle: 0.0}'
 ```

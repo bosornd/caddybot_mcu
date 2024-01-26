@@ -7,6 +7,8 @@ find_package(ament_cmake REQUIRED)
 find_package(rcl REQUIRED)
 find_package(rclc REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(caddybot_msgs REQUIRED)
 
 add_executable(mcu src/main.c)
@@ -15,6 +17,8 @@ ament_target_dependencies(mcu
   rcl
   rclc
   std_msgs
+  sensor_msgs
+  nav_msgs
   caddybot_msgs
   )
 
