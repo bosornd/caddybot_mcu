@@ -1,3 +1,3 @@
-geometry_msgs/Point location
+caddybot_msgs/Location location
 ---
 std_msgs/String zone
