@@ -18,15 +18,11 @@
 #define RCCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Aborting.\n",__LINE__,(int)temp_rc); return 1;}}
 #define RCSOFTCHECK(fn) { rcl_ret_t temp_rc = fn; if((temp_rc != RCL_RET_OK)){printf("Failed status on line %d: %d. Continuing.\n",__LINE__,(int)temp_rc);}}
 
-rcl_publisher_t mode_publisher;
 rcl_publisher_t imu_publisher;
 rcl_publisher_t odometry_publisher;
 
 rcl_subscription_t velocity_subscriber;
 rcl_subscription_t led_subscriber;
-rcl_service_t get_mode_service;
-
-char current_mode[STRING_BUFFER_LEN];
 
 void velocity_subscription_callback(const void * msgin)
 {
@@ -42,16 +38,6 @@ void led_subscription_callback(const void * msgin)
 	printf("MCU received LED(%s)\n", led->data.data ? led->data.data : "NULL");
 }
 
-void get_mode_service_callback(const void* req, void* res)
-{
-	caddybot_msgs__srv__GetMode_Response* response = (caddybot_msgs__srv__GetMode_Response*)res;
-
-	printf("MCU get_mode(%s)\n", current_mode);
-	
-	strcpy(response->mode.data.data, current_mode);
-	response->mode.data.size = strlen(current_mode);
-}
-
 int main()
 {
 	rcl_allocator_t allocator = rcl_get_default_allocator();
@@ -63,9 +49,6 @@ int main()
 	// create node
 	rcl_node_t node;
 	RCCHECK(rclc_node_init_default(&node, "caddybot_mcu", "", &support));
-
-	// Create a reliable mode publisher
-	RCCHECK(rclc_publisher_init_default(&mode_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "/mode"));
 
 	// Create a reliable IMU publisher
 	RCCHECK(rclc_publisher_init_default(&imu_publisher, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(sensor_msgs, msg, Imu), "/imu"));
@@ -79,9 +62,6 @@ int main()
 	// Create a best effort LED subscriber
 	RCCHECK(rclc_subscription_init_best_effort(&led_subscriber, &node, ROSIDL_GET_MSG_TYPE_SUPPORT(std_msgs, msg, String), "/led"));
 
-	// Create a reliable GetMode service server
-	RCCHECK(rclc_service_init_default(&get_mode_service, &node, ROSIDL_GET_SRV_TYPE_SUPPORT(caddybot_msgs, srv, GetMode), "/get_mode"));
-
 	caddybot_msgs__msg__Velocity* velocity_msg = caddybot_msgs__msg__Velocity__create();
 
 	std_msgs__msg__String* led_msg = std_msgs__msg__String__create();
@@ -89,33 +69,20 @@ int main()
 	led_msg->data.data = led_msg_buffer;
 	led_msg->data.capacity = STRING_BUFFER_LEN;
 
-	caddybot_msgs__srv__GetMode_Request* get_mode_req_msg = caddybot_msgs__srv__GetMode_Request__create();
-	caddybot_msgs__srv__GetMode_Response* get_mode_res_msg = caddybot_msgs__srv__GetMode_Response__create();
-	char get_mode_res_msg_buffer[STRING_BUFFER_LEN];
-	get_mode_res_msg->mode.data.data = get_mode_res_msg_buffer;
-	get_mode_res_msg->mode.data.capacity = STRING_BUFFER_LEN;
-
-	strcpy(current_mode, "Undefined");
-
 	// Create executor
 	rclc_executor_t executor = rclc_executor_get_zero_initialized_executor();
 	RCCHECK(rclc_executor_init(&executor, &support.context, 3, &allocator));
 	RCCHECK(rclc_executor_add_subscription(&executor, &velocity_subscriber, velocity_msg, &velocity_subscription_callback, ON_NEW_DATA));
 	RCCHECK(rclc_executor_add_subscription(&executor, &led_subscriber, led_msg, &led_subscription_callback, ON_NEW_DATA));
-	RCCHECK(rclc_executor_add_service(&executor, &get_mode_service, get_mode_req_msg, get_mode_res_msg, &get_mode_service_callback));
 
 	rclc_executor_spin(&executor);
 
 	caddybot_msgs__msg__Velocity__destroy(velocity_msg);
 	std_msgs__msg__String__destroy(led_msg);
-	caddybot_msgs__srv__GetMode_Request__destroy(get_mode_req_msg);
-	caddybot_msgs__srv__GetMode_Response__destroy(get_mode_res_msg);
 	
-	RCCHECK(rcl_publisher_fini(&mode_publisher, &node));
 	RCCHECK(rcl_publisher_fini(&imu_publisher, &node));
 	RCCHECK(rcl_publisher_fini(&odometry_publisher, &node));
 	RCCHECK(rcl_subscription_fini(&velocity_subscriber, &node));
 	RCCHECK(rcl_subscription_fini(&led_subscriber, &node));
-	RCCHECK(rcl_service_fini(&get_mode_service, &node));
 	RCCHECK(rcl_node_fini(&node));
 }
