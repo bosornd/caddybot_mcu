@@ -7,7 +7,6 @@
 #include <sensor_msgs/msg/imu.h>
 #include <nav_msgs/msg/odometry.h>
 #include <caddybot_msgs/msg/velocity.h>
-#include <caddybot_msgs/srv/get_mode.h>
 
 #include <stdio.h>
 #include <unistd.h>
